@@ -1,114 +1,113 @@
-# v0-mini-pms-dashboard
+# Yagán PMS
 
-Next.js hospitality platform foundation for short-term rentals. The app started as a `v0` front-end demo and now includes:
+> **Hospitality Operating System Foundation**
 
-- Yagán-branded landing page with interactive animations
-- Interactive logos carousel with partner integrations
-- API-backed PMS flows
-- Postgres-ready persistence
-- optional Supabase Auth with protected routes & login modal
-- Sprint 1 multi-tenant schema, roles, and onboarding scaffolding
-- Sprint 2 tenant-aware PMS data mapping with legacy fallback
+Yagán is an original N3uralia hospitality-platform foundation for short-term rentals. It evolved from a front-end PMS experiment into a multi-tenant application architecture with reservations, units, guests, roles, protected workspaces and persistent data flows.
 
-## Current Architecture
+The repository is still a **product foundation**, not a finished production hospitality suite.
 
-- App Router UI in `app/pms/*`
-- Node runtime API routes in `app/api/pms/*`
-- PMS domain logic in `lib/pms/*`
-- Auth/session helpers in `lib/auth/*` and `lib/supabase/*`
-- Local JSON fallback store in `data/pms.json`
-- Postgres-backed repository adapter
-- Supabase migration in `supabase/migrations/202606110001_sprint1_foundation.sql`
+`Property → Unit → Guest → Reservation → Task → Operational History`
 
-## Modes
+---
 
-### 1. Demo mode
+## What exists today
 
-When Supabase auth env vars are missing:
+- Yagán-branded product shell;
+- dashboard and calendar surfaces;
+- reservation create/delete workflows;
+- units, guests and reservation domain objects;
+- validation for dates, capacity and overlapping stays;
+- API-backed PMS operations;
+- PostgreSQL repository adapter with local fallback;
+- optional Supabase authentication;
+- organization/property-scoped workspaces;
+- multi-tenant roles and onboarding foundation;
+- RLS-oriented schema and audit-log foundation;
+- responsive navigation and operational views.
 
-- the app stays publicly accessible
-- PMS data still uses the current repository layer
-- this is useful for local UI work and lightweight demos
+---
 
-### 2. Protected mode
+## Canonical model
 
-When Supabase auth env vars are configured:
-
-- `/` and `/pms` require login
-- authenticated users are sent through workspace onboarding
-- API routes require an authenticated, ready workspace
-- PMS reads and writes against the active organization/property scope
-- the first workspace auto-seeds units and reservations when tenant tables are empty
-- Next.js `proxy.ts` refreshes Supabase sessions server-side
-
-## Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in:
-
-```bash
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
-POSTGRES_URL=postgres://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require
+```text
+Organization
+    ↓
+Property
+    ↓
+Unit ───────────────┐
+    ↓               │
+Reservation ← Guest │
+    ↓               │
+Operational task    │
+    ↓               │
+History / reporting ┘
 ```
 
-Supported database aliases remain available:
+The architecture is designed so reservations are not isolated calendar blocks: they belong to a property, unit, guest and tenant context that can later support housekeeping, finance, messaging and other hospitality workflows.
 
-- `DATABASE_URL`
-- `POSTGRES_URL_NON_POOLING`
-- `SUPABASE_DB_URL`
-- `NEON_DATABASE_URL`
+---
 
-## Sprint 1 Setup
+## Architecture
 
-### 1. Configure Supabase Auth
+- Next.js / React / TypeScript application;
+- App Router UI under `app/pms/*`;
+- server API routes under `app/api/pms/*`;
+- PMS domain logic in `lib/pms/*`;
+- authentication/session boundaries in `lib/auth/*` and `lib/supabase/*`;
+- PostgreSQL persistence adapter;
+- Supabase migration for organization, property, unit, guest, reservation, task and audit structures;
+- local file-backed fallback retained for development/demo use.
 
-Per the current Supabase SSR guidance, install `@supabase/ssr` and `@supabase/supabase-js`, store sessions in cookies, and refresh them through a Next.js proxy layer.
+### Protected mode
 
-### 2. Apply the SQL migration
+When authentication is configured:
 
-Run:
+- application routes require login;
+- users enter an organization/property workspace;
+- API operations are scoped to the active workspace;
+- tenant-aware reservation data maps to canonical organization/property structures.
 
-- `supabase/migrations/202606110001_sprint1_foundation.sql`
+### Development / demo mode
 
-This creates:
+A local fallback remains available for UI and engineering work when cloud authentication or database infrastructure is not configured.
 
-- `profiles`
-- `organizations`
-- `memberships`
-- `properties`
-- `units`
-- `guests`
-- `reservations`
-- `tasks`
-- `audit_logs`
-- RLS policies and role helpers
-- `bootstrap_workspace(...)` onboarding function
+Demo state must not be confused with production customer state.
 
-### 3. Create your first workspace
+---
 
-After login, open `/setup` and create:
+## Current boundary
 
-- your organization
-- the first property
-- the default owner membership
+Implemented foundation:
 
-## Storage
+- reservations;
+- units;
+- guests;
+- calendar;
+- dashboard/report surfaces;
+- tenant-aware persistence;
+- workspace onboarding;
+- authentication shell;
+- overlap/capacity validation.
 
-The PMS repository supports two storage paths:
+Not yet a complete hospitality OS:
 
-1. **Postgres mode** when a database URL is configured
-2. **File mode** when no database URL exists
+- payments, folios and invoices;
+- accounting workflows;
+- advanced staff/owner permissions;
+- OTA/channel synchronization;
+- housekeeping automation;
+- guest messaging;
+- richer operational audit tooling.
 
-Inside Postgres mode, the repository supports two execution paths:
+---
 
-1. **Workspace path** for authenticated tenants using `organizations`, `properties`, `units`, `guests`, and `reservations`
-2. **Legacy path** for non-scoped/demo consumers still using the original flat `rooms` / `reservations` tables
+## Portfolio position
 
-The API exposes the active mode through:
+Yagán is retained publicly as an original hospitality-system line showing the move from a UI prototype toward a real multi-tenant domain architecture.
 
-- `x-pms-storage`
-- `x-pms-storage-config`
+It is distinct from **Black Swan Facility Core**, which models a much broader facility and hospitality operation.
+
+---
 
 ## Development
 
@@ -119,45 +118,4 @@ pnpm typecheck
 pnpm build
 ```
 
-### Working with `main` Branch
-
-All development happens on the **`main`** branch:
-
-```bash
-# Make changes
-git checkout main
-# ... edit files ...
-
-# Commit and push
-git commit -m "type: description"
-git push origin main
-
-# Vercel automatically deploys on push to main
-```
-
-## Deployment
-
-- The repo is connected to `v0`: [Continue working on v0](https://v0.app/chat/projects/prj_8uIUIQh4qo3x6jYlfNI5767J5gLV)
-- Merges to `main` deploy to Vercel
-- For protected mode in production, set the Supabase env vars in Vercel
-- For persistent PMS writes in production, set a Postgres URL
-
-## Current Scope
-
-Implemented:
-
-- dashboard, calendar, reservations, reports, and responsive sidebar
-- API-backed reservation create/delete flows
-- validation for email, dates, capacity, and overlapping stays
-- Postgres-ready persistence layer with file fallback
-- protected auth shell and workspace onboarding
-- multi-tenant Sprint 1 schema and roles
-- tenant-aware reservation CRUD mapped to workspace tables
-- workspace auto-seeding from legacy/demo inventory on first run
-
-Still missing:
-
-- payments, folios, invoices, and accounting workflow
-- owner portals and advanced staff permissions
-- OTA/channel sync
-- housekeeping automation, guest messaging, and audit tooling UI
+Environment values belong in local/deployment configuration and must never be committed as real credentials.
